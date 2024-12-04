@@ -1,49 +1,90 @@
+let displayNumber = "0";
 let firstNumber;
 let secondNumber;
 let operator;
-let decimal = false;
+let firstNumberDecimal = false;
+let secondNumberDecimal = false;
 const display = document.querySelector(".display");
-display.innerText = 0;
 const buttons = document.querySelectorAll("button");
+const numberButtons = document.querySelectorAll(".number");
+const operatorButtons = document.querySelectorAll(".operation")
+display.innerText = displayNumber;
 
 function add (firstNumber, secondNumber) {
-    const result = parseFloat(firstNumber) + parseFloat(secondNumber)
-    console.log('result', result) 
-    return parseFloat(firstNumber) + parseFloat(secondNumber)
+    return parseFloat(firstNumber) + parseFloat(secondNumber);
 }
 
 function subtract (firstNumber, secondNumber) {
-    return parseFloat(firstNumber) - parseFloat(secondNumber)
+    return parseFloat(firstNumber) - parseFloat(secondNumber);
 }
 
 function divide (firstNumber, secondNumber) {
-    return parseFloat(firstNumber) / parseFloat(secondNumber)
+    return parseFloat(firstNumber) / parseFloat(secondNumber);
 }
 
 function multiply (firstNumber, secondNumber) {
-    return parseFloat(firstNumber) * parseFloat(secondNumber)
+    return parseFloat(firstNumber) * parseFloat(secondNumber);
 }
 
-function percentage (firstNumber) {
-    return (parseFloat(firstNumber) / 100)
+function percentage (displayNumber) {
+    return (parseFloat(displayNumber) / 100);
 }
 
 function operate (firstNumber, secondNumber, operator) {
     if(operator === "+") {
-        return add(firstNumber, secondNumber)
+        return add(firstNumber, secondNumber);
     }
     if(operator === "-") {
-        return subtract(firstNumber, secondNumber)
+        return subtract(firstNumber, secondNumber);
     }
     if(operator === "*") {
-        return multiply(firstNumber, secondNumber)
+        return multiply(firstNumber, secondNumber);
     }
     if(operator === "/") {
-        return divide(firstNumber, secondNumber)
+        return divide(firstNumber, secondNumber);
     }
     if(operator === "%"){
-        console.log('operate')
-        return percentage(firstNumber)
+        return percentage(firstNumber);
+    }
+}
+
+function updateDisplay() {
+
+    if(displayNumber.length > 11) {
+        display.innerText = displayNumber.substring(0, 11);
+    } else {
+        display.innerText = displayNumber
+    }
+}
+
+numberButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+        setNumber(button.value)
+    });
+})
+
+function setNumber(value) {
+    // Sets the first number and only sets second once an operator has been picked
+    if(operator) {
+        if(secondNumber) {
+            displayNumber += value;
+            secondNumber += value;
+            updateDisplay();
+        } else {
+            displayNumber = value;
+            secondNumber = value;
+            updateDisplay();
+        }
+    } else {
+        if(firstNumber) {
+            displayNumber += value;
+            firstNumber += value;
+            updateDisplay();
+        } else {
+            displayNumber = value;
+            firstNumber = value;
+            updateDisplay();
+        }
     }
 }
 
@@ -55,85 +96,105 @@ buttons.forEach((button) => {
     button.addEventListener('mouseleave', (event) => {
         event.target.style.opacity = 1;  
     });
-    button.addEventListener('click', (event) => {
-        // resets all code
-        if(button.value === "AC") {
-            firstNumber = undefined;
-            secondNumber = undefined;
-            decimal = false;
-            operator = undefined
-            display.innerText = 0;
+})
+
+operatorButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+        if(button.value === "=" && firstNumber && secondNumber && operator) {
+            equals();
+        } 
+        else if(button.value === "AC") {
+            clear();
         }
-        // if operation is set but equals not pressed and a new operation selected, calculate first operation and chain with new operation.
-        // if(firstNumber && secondNumber && operator && button.className !== "decimal") {
-        //     if(secondNumber.slice(-1) !== ".") {
-        //         const result = operate(firstNumber, secondNumber, operator);
-        //         display.innerText = result;
-        //         firstNumber = result;
-        //         secondNumber = undefined;
-        //     }
-        // }
-        if(button.className === "decimal" && decimal === false) {
-            if(firstNumber && !secondNumber) {
-                firstNumber += "."
-                display.innerText += ".";
-                decimal = true;
-                console.log('decimal first', firstNumber)
+        else if (button.value === "+/-"){
+            positiveNegative();
+        }
+        else if (button.value === "%") {
+            if(firstNumber && secondNumber) {
+                equals()
             }
-            if (secondNumber) {
-                display.innerText += ".";
-                secondNumber += ".";
-                decimal = true;
-                console.log('decimal 2nd', secondNumber)
-            }
+            const result = operate(displayNumber, 0, "%");
+            displayNumber = result;
+            updateDisplay()
         }
-        // Checks if equals has been clicked and returns result and resets values
-        if(button.value === "=" && secondNumber) {
-            const result = operate(firstNumber, secondNumber, operator);
-            if (result > 999999999) {
-                
-            }
-            display.innerText = result;
-            firstNumber = 0;
-            secondNumber = 0;
+        else if(button.value === ".") {
+            addDecimal();
+            updateDisplay();
         }
-        // Sets the first number and only sets second once an operator has been picked
-        if(button.className === "number"){
-            if(operator) {
-                if(secondNumber) {
-                    display.innerText += button.value;
-                    secondNumber += button.value;
-                    console.log('add secondNumber', secondNumber)
-                } else {
-                    display.innerText = button.value;
-                    secondNumber = button.value;
-                    console.log('set secondNumber', secondNumber)
-                }
-            } else {
-                if(firstNumber) {
-                    display.innerText += button.value;
-                    firstNumber += button.value;
-                    console.log('add first', firstNumber)
-                } else {
-                    display.innerText = button.value;
-                    firstNumber = button.value;
-                    console.log('set first', firstNumber)
-                }
-            } 
+        else if (firstNumber && secondNumber && operator !== ".") {
+            equals();
+            firstNumber = displayNumber;
         }
-        // set operation to operator variable
-        if(button.className === "operation"){
-            operator = button.value;
-            decimal = false;
-            console.log('set operator', operator)
-        }
-        // Checks operator is percentage and calls operate
-        // will only call on first number
-        if (button.value === "%" && firstNumber) {
-            const result = operate(firstNumber, 0, operator);
-            display.innerText = result;
-            firstNumber = undefined;
-            secondNumber = undefined;
+        else {
+            setOperation(button.value);
         }
     });
 })
+
+function setOperation(value) {
+    //  set operation to operator variable
+    if(value !== "=") {
+        operator = value;
+    };
+}
+
+function equals() {
+    const result = operate(firstNumber, secondNumber, operator) 
+    displayNumber = roundAccurately(result, 11);
+    updateDisplay()
+    firstNumber = null;
+    secondNumber = null;
+}
+
+function clear() {
+    firstNumber = null;
+    secondNumber = null;
+    displayNumber = "0";
+    firstNumberDecimal = false;
+    secondNumberDecimal = false;
+    operator = null;
+    updateDisplay()
+}
+
+function addDecimal() {
+    if(displayNumber.includes(".")){
+        return
+    } else if (displayNumber === firstNumber || displayNumber === secondNumber){
+        displayNumber += "."
+        if(firstNumber && !firstNumberDecimal) {
+            firstNumber = displayNumber;
+            firstNumberDecimal = true;
+        }
+        if(secondNumber && !secondNumberDecimal) {
+            secondNumber = displayNumber
+            secondNumberDecimal = true;
+        }
+    }
+}
+
+function positiveNegative() {
+    if (displayNumber === firstNumber && !displayNumber.includes("-")){
+        firstNumber = "-" + firstNumber;
+        displayNumber = firstNumber;
+        updateDisplay()
+    } else if (displayNumber === firstNumber && displayNumber.includes("-")){
+        firstNumber = firstNumber.split("-")[1]
+        displayNumber = firstNumber
+        updateDisplay()
+    } else if (displayNumber === secondNumber && !displayNumber.includes("-")){
+        secondNumber = "-" + secondNumber;
+        displayNumber = secondNumber;
+        updateDisplay();
+    } else if (displayNumber === secondNumber && secondNumber.includes("-")){
+        secondNumber = secondNumber.split("-")[1]
+        displayNumber = secondNumber
+        updateDisplay()
+    }
+}
+
+function roundAccurately(num, places) {
+    if(num.toString().length > places) {
+        return num.toPrecision(places)
+    }
+    return num
+}
